@@ -28,6 +28,7 @@ public class Doctor {
 
     @Column(name = "full_name", nullable = false, length = 200)
     private String fullName;
+    
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "specialization_id", nullable = false)
@@ -35,6 +36,9 @@ public class Doctor {
 
     @Column(length = 500)
     private String qualifications;
+
+    @Column(name = "slmc_number", length = 100)
+    private String slmcNumber;
 
     @Column(columnDefinition = "TEXT")
     private String bio;

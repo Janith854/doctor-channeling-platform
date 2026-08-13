@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 @EnableFeignClients
 @EnableJpaAuditing
 public class DirectoryServiceApplication {
+
     public static void main(String[] args) {
         SpringApplication.run(DirectoryServiceApplication.class, args);
     }

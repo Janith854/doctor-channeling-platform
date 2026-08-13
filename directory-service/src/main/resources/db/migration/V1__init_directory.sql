@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS doctors (
     full_name           VARCHAR(200)    NOT NULL,
     specialization_id   UUID            NOT NULL REFERENCES specializations(id),
     qualifications      VARCHAR(500),
+    slmc_number         VARCHAR(100),
     bio                 TEXT,
     created_at          TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at          TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP

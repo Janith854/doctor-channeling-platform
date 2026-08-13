@@ -1,0 +1,46 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: identity-service
+
+  datasource:
+    url: jdbc:postgresql://127.0.0.1:5432/identity_db?connectTimeout=5
+    username: postgres
+    password: ${SPRING_DATASOURCE_PASSWORD:1234}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+  endpoint:
+    health:
+      show-details: always
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+jwt:
+  # Default dev secret: Base64URL-encoded (no padding), 41 bytes / 328 bits > 256 bits required for HMAC-SHA256.
+  # Override at runtime by setting the JWT_SECRET environment variable to any Base64URL-encoded value.
+  secret: ${JWT_SECRET:c2VjdXJla2V5MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI}
+  expiration: 86400000
+  refresh-token:
+    expiration: 604800000

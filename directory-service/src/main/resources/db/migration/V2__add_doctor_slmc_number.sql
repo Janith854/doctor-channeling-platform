@@ -1,0 +1,2 @@
+ALTER TABLE doctors
+    ADD COLUMN IF NOT EXISTS slmc_number VARCHAR(100);
