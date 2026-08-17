@@ -19,5 +19,5 @@ public interface DoctorScheduleRepository extends JpaRepository<DoctorSchedule, 
 
     boolean existsByDoctorId(UUID doctorId);
 
-    List<DoctorSchedule> findByDoctorIdAndIsActive(UUID doctorId, boolean isActive);
+    List<DoctorSchedule> findByDoctorIdAndActive(UUID doctorId, boolean active);
 }

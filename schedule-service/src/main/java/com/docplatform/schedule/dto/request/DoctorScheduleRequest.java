@@ -33,5 +33,6 @@ public class DoctorScheduleRequest {
     private LocalTime endTime;
 
     @Min(value = 1, message = "Slot duration must be at least 1 minute")
+    @Builder.Default
     private int slotDurationMinutes = 20;
 }

@@ -12,11 +12,13 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface DoctorScheduleMapper {
 
+    @Mapping(target = "isActive", source = "active")
     DoctorScheduleResponse toResponse(DoctorSchedule doctorSchedule);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "active", ignore = true)
     DoctorSchedule toEntity(DoctorScheduleRequest request);
 
     List<DoctorScheduleResponse> toResponseList(List<DoctorSchedule> schedules);
@@ -24,5 +26,9 @@ public interface DoctorScheduleMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    void updateEntityFromRequest(DoctorScheduleRequest request, @MappingTarget DoctorSchedule doctorSchedule);
+    @Mapping(target = "active", ignore = true)
+    void updateEntityFromRequest(
+            DoctorScheduleRequest request,
+            @MappingTarget DoctorSchedule doctorSchedule
+    );
 }

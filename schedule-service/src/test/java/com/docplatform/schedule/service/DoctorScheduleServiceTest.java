@@ -52,7 +52,7 @@ class DoctorScheduleServiceTest {
                 .startTime(LocalTime.of(9, 0))
                 .endTime(LocalTime.of(17, 0))
                 .slotDurationMinutes(20)
-                .isActive(true)
+                .active(true)
                 .build();
     }
 
@@ -146,17 +146,21 @@ class DoctorScheduleServiceTest {
         verify(doctorScheduleRepository, never()).deleteById(any());
     }
 
-    @Test
-    @DisplayName("activateSchedule - should set isActive to true")
-    void activateSchedule_shouldSetActive() {
-        schedule.setActive(false);
-        when(doctorScheduleRepository.findById(scheduleId)).thenReturn(Optional.of(schedule));
-        when(doctorScheduleRepository.save(any(DoctorSchedule.class))).thenAnswer(inv -> inv.getArgument(0));
+@Test
+@DisplayName("activateSchedule - should set isActive to true")
+void activateSchedule_shouldSetActive() {
+    schedule.setActive(false);
 
-        DoctorSchedule result = doctorScheduleService.activateSchedule(scheduleId);
+    when(doctorScheduleRepository.findById(scheduleId))
+            .thenReturn(Optional.of(schedule));
 
-        assertThat(result.isActive()).isTrue();
-    }
+    when(doctorScheduleRepository.save(any(DoctorSchedule.class)))
+            .thenAnswer(inv -> inv.getArgument(0));
+
+    DoctorSchedule result = doctorScheduleService.activateSchedule(scheduleId);
+
+    assertThat(result.isActive()).isTrue();
+}
 
     @Test
     @DisplayName("deactivateSchedule - should set isActive to false")

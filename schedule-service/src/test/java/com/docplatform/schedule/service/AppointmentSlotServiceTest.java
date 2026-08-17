@@ -63,7 +63,7 @@ class AppointmentSlotServiceTest {
                 .startTime(LocalTime.of(9, 0))
                 .endTime(LocalTime.of(10, 0))
                 .slotDurationMinutes(20)
-                .isActive(true)
+                .active(true)
                 .build();
 
         appointmentSlot = AppointmentSlot.builder()
