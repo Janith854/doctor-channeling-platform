@@ -50,15 +50,14 @@ export default function RegisterPage() {
       navigate('/login');
     } catch (err) {
       console.error('Registration error details:', err);
-      // Extract real error message from backend
       const realMessage =
         err.response?.data?.message ||
         err.response?.data?.error ||
         (typeof err.response?.data === 'string' && err.response.data.trim()) ||
         (err.code === 'ERR_NETWORK'
-          ? 'Cannot connect to Identity Service at http://localhost:8081. Please check if the backend is running and CORS is enabled.'
+          ? 'Cannot connect to Identity Service. Please verify service availability.'
           : err.message) ||
-        'Registration failed. Please try again with valid credentials.';
+        'Registration failed. Please check your details and try again.';
 
       setServerError(realMessage);
     } finally {
@@ -68,13 +67,15 @@ export default function RegisterPage() {
 
   return (
     <AuthLayout>
-      <div className="bg-white p-8 rounded-3xl border border-navy-100 shadow-xl shadow-navy-100/50">
+      <div className="bg-white p-7 sm:p-8 rounded-3xl border border-navy-100 shadow-xl shadow-navy-100/40">
         <div className="mb-6 text-center">
-          <h2 className="text-2xl font-extrabold text-navy-900">Create New Account</h2>
-          <p className="text-sm text-navy-400 mt-1">Join MediChannel to book appointments easily</p>
+          <h2 className="text-2xl font-bold text-navy-900 tracking-tight">Create New Account</h2>
+          <p className="text-xs sm:text-sm text-navy-400 mt-1">
+            Join MediChannel to book appointments and consult specialists
+          </p>
         </div>
 
-        {serverError && <ErrorMessage message={serverError} className="mb-5" />}
+        {serverError && <ErrorMessage message={serverError} className="mb-4" />}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-3.5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -107,7 +108,7 @@ export default function RegisterPage() {
             label="Email Address"
             type="email"
             icon={Mail}
-            placeholder="john.doe@example.com"
+            placeholder="you@example.com"
             error={errors.email?.message}
             {...register('email', {
               required: 'Email is required',
@@ -122,9 +123,14 @@ export default function RegisterPage() {
             label="Phone Number"
             type="tel"
             icon={Phone}
-            placeholder="+1 234 567 890"
+            placeholder="+94 77 123 4567"
             error={errors.phone?.message}
-            {...register('phone')}
+            {...register('phone', {
+              pattern: {
+                value: /^[+]?[0-9\s-]{9,15}$/,
+                message: 'Invalid phone number',
+              },
+            })}
           />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -136,7 +142,7 @@ export default function RegisterPage() {
               error={errors.password?.message}
               {...register('password', {
                 required: 'Password is required',
-                minLength: { value: 8, message: 'Minimum 8 characters' },
+                minLength: { value: 6, message: 'Min 6 characters' },
               })}
             />
 
@@ -148,22 +154,30 @@ export default function RegisterPage() {
               error={errors.confirmPassword?.message}
               {...register('confirmPassword', {
                 required: 'Please confirm password',
-                validate: (value) => value === password || 'Passwords do not match',
+                validate: (val) => val === password || 'Passwords do not match',
               })}
             />
           </div>
 
-          <div className="pt-2">
-            <Button type="submit" variant="primary" size="lg" fullWidth loading={loading} className="gap-2">
-              <UserPlus className="w-5 h-5" /> Create Account
-            </Button>
-          </div>
+          <Button
+            type="submit"
+            variant="primary"
+            size="lg"
+            fullWidth
+            loading={loading}
+            className="mt-2 gap-2"
+          >
+            <UserPlus className="w-4 h-4" /> Create Account
+          </Button>
         </form>
 
-        <div className="mt-6 pt-5 border-t border-navy-100 text-center">
-          <p className="text-sm text-navy-500">
+        <div className="mt-7 pt-5 border-t border-navy-100 text-center">
+          <p className="text-xs sm:text-sm text-navy-500">
             Already have an account?{' '}
-            <Link to="/login" className="font-bold text-primary-600 hover:text-primary-700 hover:underline inline-flex items-center gap-1">
+            <Link
+              to="/login"
+              className="font-semibold text-primary-600 hover:text-primary-700 hover:underline inline-flex items-center gap-1"
+            >
               Sign In <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </p>

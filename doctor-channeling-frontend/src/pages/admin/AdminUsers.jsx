@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { userApi } from '../../api/authApi';
 import Table from '../../components/common/Table';
 import Button from '../../components/common/Button';
+import PageHeader from '../../components/common/PageHeader';
 import Loader from '../../components/common/Loader';
 import Modal from '../../components/common/Modal';
 import Input from '../../components/common/Input';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
-import { Users, Trash2, Edit2, ShieldCheck, Mail, Phone } from 'lucide-react';
+import { Users, Trash2, Edit2, Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function AdminUsers() {
@@ -72,7 +73,7 @@ export default function AdminUsers() {
   const columns = [
     {
       key: 'name',
-      label: 'Name',
+      label: 'Full Name',
       render: (row) => (
         <div className="font-bold text-navy-900">
           {row.firstName} {row.lastName}
@@ -81,7 +82,7 @@ export default function AdminUsers() {
     },
     {
       key: 'email',
-      label: 'Email',
+      label: 'Email Address',
       render: (row) => (
         <div className="flex items-center gap-1.5 text-xs text-navy-600">
           <Mail className="w-3.5 h-3.5 text-navy-400" /> {row.email}
@@ -97,9 +98,9 @@ export default function AdminUsers() {
     },
     {
       key: 'role',
-      label: 'Role',
+      label: 'System Role',
       render: (row) => (
-        <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-primary-50 text-primary-700">
+        <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-primary-50 text-primary-700 border border-primary-100">
           {row.role?.name?.replace('ROLE_', '') || 'PATIENT'}
         </span>
       ),
@@ -109,16 +110,18 @@ export default function AdminUsers() {
       label: 'Actions',
       className: 'text-right',
       render: (row) => (
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center justify-end gap-1.5">
           <button
             onClick={() => setEditUser(row)}
-            className="p-1.5 text-navy-500 hover:text-primary-600 hover:bg-navy-100 rounded-lg cursor-pointer transition-colors"
+            className="p-1.5 text-navy-500 hover:text-primary-600 hover:bg-navy-50 rounded-lg cursor-pointer transition-colors"
+            aria-label="Edit user"
           >
             <Edit2 className="w-4 h-4" />
           </button>
           <button
             onClick={() => setDeleteId(row.id)}
             className="p-1.5 text-navy-500 hover:text-danger-600 hover:bg-danger-50 rounded-lg cursor-pointer transition-colors"
+            aria-label="Delete user"
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -129,17 +132,29 @@ export default function AdminUsers() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-extrabold text-navy-900">User Management</h1>
-          <p className="text-sm text-navy-500 mt-1">View, update, and manage all registered system accounts</p>
-        </div>
-      </div>
+      <PageHeader
+        title="User Accounts Management"
+        subtitle="View, update, and manage all registered patient, doctor, and admin accounts"
+      />
 
-      {loading ? <Loader text="Loading registered accounts..." /> : <Table columns={columns} data={users} />}
+      {loading ? (
+        <Loader text="Loading registered accounts..." />
+      ) : (
+        <Table
+          columns={columns}
+          data={users}
+          emptyTitle="No accounts found"
+          emptyMessage="No registered users exist in the identity registry."
+        />
+      )}
 
       {/* Edit Modal */}
-      <Modal isOpen={!!editUser} onClose={() => setEditUser(null)} title="Edit User Account">
+      <Modal
+        isOpen={!!editUser}
+        onClose={() => setEditUser(null)}
+        title="Edit User Account"
+        subtitle="Modify user contact information"
+      >
         {editUser && (
           <form onSubmit={handleUpdate} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
@@ -157,20 +172,24 @@ export default function AdminUsers() {
               />
             </div>
             <Input
-              label="Email"
+              label="Email Address"
               type="email"
               value={editUser.email || ''}
               onChange={(e) => setEditUser({ ...editUser, email: e.target.value })}
               required
             />
             <Input
-              label="Phone"
+              label="Phone Number"
               value={editUser.phone || ''}
               onChange={(e) => setEditUser({ ...editUser, phone: e.target.value })}
             />
-            <div className="flex justify-end gap-3 pt-3">
-              <Button variant="secondary" onClick={() => setEditUser(null)}>Cancel</Button>
-              <Button variant="primary" type="submit" loading={saving}>Save Changes</Button>
+            <div className="flex justify-end gap-2.5 pt-3">
+              <Button variant="secondary" size="md" onClick={() => setEditUser(null)}>
+                Cancel
+              </Button>
+              <Button variant="primary" size="md" type="submit" loading={saving}>
+                Save Changes
+              </Button>
             </div>
           </form>
         )}
@@ -182,7 +201,7 @@ export default function AdminUsers() {
         onConfirm={handleDelete}
         loading={saving}
         title="Delete User Account"
-        message="Are you sure you want to permanently delete this user account?"
+        message="Are you sure you want to permanently delete this user account? This will revoke system access."
       />
     </div>
   );

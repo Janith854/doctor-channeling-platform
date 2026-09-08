@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { specializationApi } from '../../api/directoryApi';
 import Table from '../../components/common/Table';
 import Button from '../../components/common/Button';
+import PageHeader from '../../components/common/PageHeader';
 import Loader from '../../components/common/Loader';
 import Modal from '../../components/common/Modal';
 import Input from '../../components/common/Input';
@@ -54,10 +55,10 @@ export default function AdminSpecializations() {
       setSaving(true);
       if (editSpec) {
         await specializationApi.update(editSpec.id, formData);
-        toast.success('Specialization updated');
+        toast.success('Specialization updated successfully');
       } else {
         await specializationApi.create(formData);
-        toast.success('Specialization added');
+        toast.success('Specialization added successfully');
       }
       setIsModalOpen(false);
       fetchSpecs();
@@ -88,8 +89,8 @@ export default function AdminSpecializations() {
       key: 'name',
       label: 'Specialty Name',
       render: (row) => (
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-xs shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center font-bold text-xs shrink-0">
             <Layers className="w-4 h-4" />
           </div>
           <span className="font-bold text-navy-900">{row.name}</span>
@@ -98,24 +99,30 @@ export default function AdminSpecializations() {
     },
     {
       key: 'description',
-      label: 'Description',
-      render: (row) => <span className="text-xs text-navy-500 line-clamp-1">{row.description || 'No description provided'}</span>,
+      label: 'Clinical Description',
+      render: (row) => (
+        <span className="text-xs text-navy-600 line-clamp-1">
+          {row.description || 'No description provided'}
+        </span>
+      ),
     },
     {
       key: 'actions',
       label: 'Actions',
       className: 'text-right',
       render: (row) => (
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center justify-end gap-1.5">
           <button
             onClick={() => handleOpenEdit(row)}
-            className="p-1.5 text-navy-500 hover:text-primary-600 hover:bg-navy-100 rounded-lg cursor-pointer transition-colors"
+            className="p-1.5 text-navy-500 hover:text-primary-600 hover:bg-navy-50 rounded-lg cursor-pointer transition-colors"
+            aria-label="Edit specialization"
           >
             <Edit2 className="w-4 h-4" />
           </button>
           <button
             onClick={() => setDeleteId(row.id)}
             className="p-1.5 text-navy-500 hover:text-danger-600 hover:bg-danger-50 rounded-lg cursor-pointer transition-colors"
+            aria-label="Delete specialization"
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -126,22 +133,32 @@ export default function AdminSpecializations() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold text-navy-900">Medical Specializations</h1>
-          <p className="text-sm text-navy-500 mt-1">Manage clinical departments and doctor specialties</p>
-        </div>
-        <Button variant="primary" size="sm" onClick={handleOpenCreate} className="gap-2">
-          <Plus className="w-4 h-4" /> Add Specialization
-        </Button>
-      </div>
+      <PageHeader
+        title="Medical Specializations"
+        subtitle="Manage clinical specialties and department classifications"
+        actions={
+          <Button variant="primary" size="md" onClick={handleOpenCreate} className="gap-2">
+            <Plus className="w-4 h-4" /> Add Specialization
+          </Button>
+        }
+      />
 
-      {loading ? <Loader text="Loading clinical specialties..." /> : <Table columns={columns} data={specializations} />}
+      {loading ? (
+        <Loader text="Loading clinical specialties..." />
+      ) : (
+        <Table
+          columns={columns}
+          data={specializations}
+          emptyTitle="No specializations registered"
+          emptyMessage="Add the first medical specialty or clinical department."
+        />
+      )}
 
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={editSpec ? 'Edit Specialization' : 'Add Clinical Specialty'}
+        title={editSpec ? 'Edit Specialization' : 'Add Medical Specialization'}
+        subtitle="Specify specialty title and description"
       >
         <form onSubmit={handleSave} className="space-y-4">
           <Input
@@ -152,20 +169,26 @@ export default function AdminSpecializations() {
             required
           />
 
-          <div>
-            <label className="block text-sm font-medium text-navy-700 mb-1.5">Description</label>
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-navy-700 tracking-wide">
+              Clinical Description
+            </label>
             <textarea
               rows={3}
-              placeholder="Clinical discipline dealing with disorders of the heart..."
+              placeholder="Clinical discipline dealing with diagnosis and treatment of..."
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-4 py-2.5 rounded-xl border border-navy-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-navy-200 text-sm text-navy-900 placeholder:text-navy-400 focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-3">
-            <Button variant="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-            <Button variant="primary" type="submit" loading={saving}>Save</Button>
+          <div className="flex justify-end gap-2.5 pt-3">
+            <Button variant="secondary" size="md" onClick={() => setIsModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" size="md" type="submit" loading={saving}>
+              {editSpec ? 'Save Changes' : 'Add Specialty'}
+            </Button>
           </div>
         </form>
       </Modal>

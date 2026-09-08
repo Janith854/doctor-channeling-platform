@@ -9,6 +9,7 @@ import Select from '../../components/common/Select';
 import Modal from '../../components/common/Modal';
 import Loader from '../../components/common/Loader';
 import EmptyState from '../../components/common/EmptyState';
+import PageHeader from '../../components/common/PageHeader';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import {
   Calendar,
@@ -18,11 +19,14 @@ import {
   Power,
   Trash2,
   Building2,
-  CalendarCheck,
+  CheckCircle2,
+  CalendarDays,
+  Filter,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-const DAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+const DAYS = ['ALL', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+const FORM_DAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
 
 export default function ScheduleManagement() {
   const { user } = useAuth();
@@ -30,12 +34,15 @@ export default function ScheduleManagement() {
   const [hospitals, setHospitals] = useState([]);
   const [doctorProfile, setDoctorProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedDay, setSelectedDay] = useState('ALL');
 
   // Modal States
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isGenerateOpen, setIsGenerateOpen] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState(null);
   const [generating, setGenerating] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const [slotDate, setSlotDate] = useState(new Date().toISOString().split('T')[0]);
 
   // Form State
@@ -50,7 +57,7 @@ export default function ScheduleManagement() {
     if (!user?.id) return;
     try {
       setLoading(true);
-      const docListRes = await doctorApi.getAll();
+      const docListRes = await doctorApi.getAll().catch(() => ({ data: { data: [] } }));
       const allDocs = docListRes.data?.data || [];
       const currentDoc = allDocs.find((d) => d.userId === user.id) || allDocs[0];
       setDoctorProfile(currentDoc);
@@ -58,8 +65,8 @@ export default function ScheduleManagement() {
       const docId = currentDoc?.id || user.id;
 
       const [schedRes, hospRes] = await Promise.all([
-        scheduleApi.getByDoctor(docId),
-        hospitalApi.getAll(),
+        scheduleApi.getByDoctor(docId).catch(() => ({ data: { data: [] } })),
+        hospitalApi.getAll().catch(() => ({ data: { data: [] } })),
       ]);
 
       setSchedules(schedRes.data?.data || []);
@@ -81,7 +88,7 @@ export default function ScheduleManagement() {
   const handleCreateSchedule = async (e) => {
     e.preventDefault();
     if (!doctorProfile?.id || !hospitalId) {
-      toast.error('Please ensure doctor profile and hospital are selected');
+      toast.error('Please ensure hospital is selected');
       return;
     }
 
@@ -97,7 +104,7 @@ export default function ScheduleManagement() {
       };
 
       await scheduleApi.create(payload);
-      toast.success('Schedule created successfully');
+      toast.success('Timetable schedule created successfully');
       setIsCreateOpen(false);
       fetchSchedules();
     } catch (err) {
@@ -122,13 +129,18 @@ export default function ScheduleManagement() {
     }
   };
 
-  const handleDeleteSchedule = async (id) => {
+  const handleDeleteSchedule = async () => {
+    if (!deleteId) return;
     try {
-      await scheduleApi.delete(id);
-      toast.success('Schedule deleted');
+      setDeleting(true);
+      await scheduleApi.delete(deleteId);
+      toast.success('Schedule removed');
+      setDeleteId(null);
       fetchSchedules();
     } catch (err) {
       toast.error('Failed to delete schedule');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -141,7 +153,7 @@ export default function ScheduleManagement() {
         scheduleId: selectedSchedule.id,
         slotDate,
       });
-      toast.success('Appointment slots generated successfully for ' + slotDate);
+      toast.success(`Slots generated successfully for ${slotDate}`);
       setIsGenerateOpen(false);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to generate slots');
@@ -152,65 +164,142 @@ export default function ScheduleManagement() {
 
   const hospitalMap = Object.fromEntries(hospitals.map((h) => [h.id, h.name]));
 
+  const filteredSchedules = schedules.filter((sch) => {
+    if (selectedDay === 'ALL') return true;
+    return sch.dayOfWeek === selectedDay;
+  });
+
+  const activeCount = schedules.filter((s) => s.active).length;
+  const totalHospitals = new Set(schedules.map((s) => s.hospitalId)).size;
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold text-navy-900">Doctor Schedule Management</h1>
-          <p className="text-sm text-navy-500 mt-1">Configure weekly hospital timetables and generate booking slots</p>
+      <PageHeader
+        title="Channeling Schedule"
+        subtitle="Configure weekly consultation timetables, hospital centers, and generate patient appointment slots"
+        actions={
+          <Button
+            variant="primary"
+            size="md"
+            onClick={() => setIsCreateOpen(true)}
+            className="gap-2 shadow-xs"
+          >
+            <Plus className="w-4 h-4" /> Add Timetable
+          </Button>
+        }
+      />
+
+      {/* Schedule Status & Legend Banner */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white p-4 rounded-2xl border border-navy-100 flex items-center justify-between shadow-2xs">
+          <div>
+            <p className="text-xs text-navy-400 font-medium">Active Schedules</p>
+            <p className="text-xl font-bold text-navy-900 mt-0.5">{activeCount} of {schedules.length}</p>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-accent-50 text-accent-600 flex items-center justify-center">
+            <CheckCircle2 className="w-5 h-5" />
+          </div>
         </div>
-        <Button variant="primary" size="sm" onClick={() => setIsCreateOpen(true)} className="gap-2">
-          <Plus className="w-4 h-4" /> Create New Schedule
-        </Button>
+        <div className="bg-white p-4 rounded-2xl border border-navy-100 flex items-center justify-between shadow-2xs">
+          <div>
+            <p className="text-xs text-navy-400 font-medium">Affiliated Hospitals</p>
+            <p className="text-xl font-bold text-navy-900 mt-0.5">{totalHospitals}</p>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center">
+            <Building2 className="w-5 h-5" />
+          </div>
+        </div>
+        <div className="bg-white p-4 rounded-2xl border border-navy-100 flex flex-col justify-center space-y-1.5 shadow-2xs">
+          <p className="text-xs text-navy-400 font-medium">Status Guide</p>
+          <div className="flex items-center gap-3 text-xs">
+            <span className="inline-flex items-center gap-1.5 text-accent-700">
+              <span className="w-2 h-2 rounded-full bg-accent-500"></span> Available / Active
+            </span>
+            <span className="inline-flex items-center gap-1.5 text-navy-500">
+              <span className="w-2 h-2 rounded-full bg-navy-300"></span> Inactive
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Day Filter Tabs */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+        {DAYS.map((d) => (
+          <button
+            key={d}
+            onClick={() => setSelectedDay(d)}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+              selectedDay === d
+                ? 'bg-primary-600 text-white shadow-xs'
+                : 'bg-white text-navy-600 hover:bg-navy-50 hover:text-navy-900 border border-navy-100'
+            }`}
+          >
+            {d === 'ALL' ? 'All Days' : d.slice(0, 3)}
+          </button>
+        ))}
       </div>
 
       {loading ? (
-        <Loader text="Loading schedule configurations..." />
-      ) : schedules.length === 0 ? (
+        <Loader text="Loading schedule timetable..." />
+      ) : filteredSchedules.length === 0 ? (
         <EmptyState
           icon={Calendar}
-          title="No regular schedules created"
-          description="Create your weekly clinic schedules to allow patients to book appointment slots."
-          actionLabel="Create Schedule"
+          title={selectedDay === 'ALL' ? 'No schedules configured yet' : `No schedules for ${selectedDay}`}
+          description="Create recurring weekly time slots to allow patients to book appointments at your affiliated medical centers."
+          actionLabel="Add Timetable"
           onAction={() => setIsCreateOpen(true)}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {schedules.map((sch) => (
-            <Card key={sch.id} className="bg-white border border-navy-100 p-6 flex flex-col justify-between">
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-extrabold text-primary-700 bg-primary-50 px-3 py-1 rounded-xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredSchedules.map((sch) => (
+            <Card
+              key={sch.id}
+              className="bg-white border border-navy-100 p-5 flex flex-col justify-between hover:border-navy-200 transition-colors"
+            >
+              <div className="space-y-3.5">
+                <div className="flex justify-between items-center pb-2.5 border-b border-navy-100">
+                  <span className="text-xs font-bold text-primary-700 bg-primary-50 border border-primary-100 px-2.5 py-0.5 rounded-lg">
                     {sch.dayOfWeek}
                   </span>
                   <button
                     onClick={() => handleToggleActivate(sch.id, sch.active)}
-                    className={`flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full cursor-pointer transition-all ${
+                    className={`flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full cursor-pointer transition-all border ${
                       sch.active
-                        ? 'bg-accent-100 text-accent-700 hover:bg-accent-200'
-                        : 'bg-navy-100 text-navy-600 hover:bg-navy-200'
+                        ? 'bg-accent-50 text-accent-700 border-accent-200 hover:bg-accent-100'
+                        : 'bg-navy-100 text-navy-600 border-navy-200 hover:bg-navy-200'
                     }`}
                   >
                     <Power className="w-3 h-3" /> {sch.active ? 'Active' : 'Inactive'}
                   </button>
                 </div>
 
-                <div className="space-y-1 pt-2">
-                  <div className="flex items-center gap-2 text-sm font-bold text-navy-800">
-                    <Clock className="w-4 h-4 text-primary-600" />
-                    <span>{sch.startTime?.slice(0, 5)} - {sch.endTime?.slice(0, 5)}</span>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-bold text-navy-900">
+                    <Clock className="w-4 h-4 text-primary-600 shrink-0" />
+                    <span>
+                      {sch.startTime?.slice(0, 5)} - {sch.endTime?.slice(0, 5)}
+                    </span>
                   </div>
+
                   <div className="flex items-center gap-2 text-xs text-navy-600">
-                    <Building2 className="w-4 h-4 text-navy-400" />
-                    <span>{hospitalMap[sch.hospitalId] || `Hospital #${sch.hospitalId?.slice(0, 8)}`}</span>
+                    <Building2 className="w-3.5 h-3.5 text-navy-400 shrink-0" />
+                    <span className="truncate font-medium">
+                      {hospitalMap[sch.hospitalId] || `Hospital Center #${sch.hospitalId?.slice(0, 6)}`}
+                    </span>
                   </div>
-                  <p className="text-xs text-navy-400">Slot Duration: {sch.slotDurationMinutes || 20} minutes</p>
+
+                  <div className="bg-navy-50/70 p-2.5 rounded-xl border border-navy-100/60 text-xs text-navy-600 flex items-center justify-between">
+                    <span>Slot Interval</span>
+                    <span className="font-semibold text-navy-900">
+                      {sch.slotDurationMinutes || 20} mins / patient
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              <div className="mt-5 pt-4 border-t border-navy-100 flex items-center justify-between gap-2">
+              <div className="mt-5 pt-3.5 border-t border-navy-100 flex items-center justify-between gap-2">
                 <Button
-                  variant="primary"
+                  variant="secondary"
                   size="sm"
                   onClick={() => {
                     setSelectedSchedule(sch);
@@ -218,11 +307,12 @@ export default function ScheduleManagement() {
                   }}
                   className="flex-1 gap-1 text-xs"
                 >
-                  <Zap className="w-3.5 h-3.5" /> Generate Slots
+                  <Zap className="w-3.5 h-3.5 text-primary-600" /> Generate Slots
                 </Button>
                 <button
-                  onClick={() => handleDeleteSchedule(sch.id)}
-                  className="p-2 text-danger-500 hover:bg-danger-50 rounded-xl transition-colors cursor-pointer"
+                  onClick={() => setDeleteId(sch.id)}
+                  className="p-2 text-navy-400 hover:text-danger-600 hover:bg-danger-50 rounded-xl transition-colors cursor-pointer"
+                  aria-label="Delete schedule"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -233,14 +323,19 @@ export default function ScheduleManagement() {
       )}
 
       {/* Create Schedule Modal */}
-      <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Create Weekly Schedule">
+      <Modal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        title="Add Weekly Consultation Schedule"
+        subtitle="Define recurring channeling day, operating hours, and hospital location"
+      >
         <form onSubmit={handleCreateSchedule} className="space-y-4">
           <Select
-            label="Hospital / Clinic"
+            label="Hospital / Medical Center"
             value={hospitalId}
             onChange={(e) => setHospitalId(e.target.value)}
             options={hospitals.map((h) => ({ value: h.id, label: h.name }))}
-            placeholder="Select Hospital"
+            placeholder="Select Hospital Location"
             required
           />
 
@@ -248,20 +343,20 @@ export default function ScheduleManagement() {
             label="Day of Week"
             value={dayOfWeek}
             onChange={(e) => setDayOfWeek(e.target.value)}
-            options={DAYS.map((d) => ({ value: d, label: d }))}
+            options={FORM_DAYS.map((d) => ({ value: d, label: d }))}
             required
           />
 
           <div className="grid grid-cols-2 gap-3">
             <Input
-              label="Start Time"
+              label="Session Start Time"
               type="time"
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
               required
             />
             <Input
-              label="End Time"
+              label="Session End Time"
               type="time"
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
@@ -279,9 +374,13 @@ export default function ScheduleManagement() {
             required
           />
 
-          <div className="flex gap-3 justify-end pt-3">
-            <Button variant="secondary" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
-            <Button variant="primary" type="submit" loading={submitting}>Create Schedule</Button>
+          <div className="flex gap-2.5 justify-end pt-3 border-t border-navy-100">
+            <Button variant="secondary" size="md" onClick={() => setIsCreateOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" size="md" type="submit" loading={submitting}>
+              Save Schedule
+            </Button>
           </div>
         </form>
       </Modal>
@@ -290,16 +389,21 @@ export default function ScheduleManagement() {
       <Modal
         isOpen={isGenerateOpen}
         onClose={() => setIsGenerateOpen(false)}
-        title="Generate Daily Appointment Slots"
+        title="Generate Daily Channeling Slots"
+        subtitle="Instantiate bookable patient consultation slots for a specific date"
       >
         <form onSubmit={handleGenerateSlots} className="space-y-4">
-          <p className="text-xs text-navy-500 leading-relaxed">
-            Generate individual bookable channeling slots for <b>{selectedSchedule?.dayOfWeek}</b> between{' '}
-            <b>{selectedSchedule?.startTime?.slice(0, 5)} - {selectedSchedule?.endTime?.slice(0, 5)}</b>.
-          </p>
+          <div className="bg-navy-50 p-3.5 rounded-xl border border-navy-100 space-y-1 text-xs">
+            <p className="font-semibold text-navy-800">
+              Timetable: {selectedSchedule?.dayOfWeek} ({selectedSchedule?.startTime?.slice(0, 5)} - {selectedSchedule?.endTime?.slice(0, 5)})
+            </p>
+            <p className="text-navy-500">
+              Location: {hospitalMap[selectedSchedule?.hospitalId] || 'Hospital Center'}
+            </p>
+          </div>
 
           <Input
-            label="Target Calendar Date"
+            label="Select Date to Generate Slots"
             type="date"
             min={new Date().toISOString().split('T')[0]}
             value={slotDate}
@@ -307,14 +411,25 @@ export default function ScheduleManagement() {
             required
           />
 
-          <div className="flex gap-3 justify-end pt-3">
-            <Button variant="secondary" onClick={() => setIsGenerateOpen(false)}>Cancel</Button>
-            <Button variant="accent" type="submit" loading={generating} className="gap-2">
+          <div className="flex gap-2.5 justify-end pt-3 border-t border-navy-100">
+            <Button variant="secondary" size="md" onClick={() => setIsGenerateOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" size="md" type="submit" loading={generating} className="gap-2">
               <Zap className="w-4 h-4" /> Generate Slots
             </Button>
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleDeleteSchedule}
+        loading={deleting}
+        title="Delete Schedule Timetable"
+        message="Are you sure you want to remove this weekly schedule? Any existing appointments will remain recorded."
+      />
     </div>
   );
 }

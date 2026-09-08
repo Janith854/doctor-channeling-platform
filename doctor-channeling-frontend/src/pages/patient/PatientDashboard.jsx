@@ -2,12 +2,11 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { appointmentApi } from '../../api/bookingApi';
-import { doctorApi, hospitalApi } from '../../api/directoryApi';
+import { doctorApi } from '../../api/directoryApi';
 import { paymentApi } from '../../api/paymentApi';
-import { notificationApi } from '../../api/notificationApi';
-import Card from '../../components/common/Card';
-import Button from '../../components/common/Button';
-import Badge from '../../components/common/Badge';
+import StatCard from '../../components/common/StatCard';
+import StatusBadge from '../../components/appointments/StatusBadge';
+import EmptyState from '../../components/common/EmptyState';
 import DoctorCard from '../../components/doctors/DoctorCard';
 import AppointmentCard from '../../components/appointments/AppointmentCard';
 import Loader from '../../components/common/Loader';
@@ -15,14 +14,22 @@ import {
   Calendar,
   Search,
   CreditCard,
-  Bell,
   Clock,
   ArrowRight,
   UserCheck,
   Stethoscope,
   ChevronRight,
+  Plus,
+  Building2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
 
 export default function PatientDashboard() {
   const { user } = useAuth();
@@ -30,7 +37,6 @@ export default function PatientDashboard() {
   const [appointments, setAppointments] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [payments, setPayments] = useState([]);
-  const [notifications, setNotifications] = useState([]);
   const [stats, setStats] = useState({ upcoming: 0, completed: 0, spent: 0 });
 
   useEffect(() => {
@@ -38,24 +44,23 @@ export default function PatientDashboard() {
       if (!user?.id) return;
       try {
         setLoading(true);
-        const [appRes, docRes, payRes, notifRes] = await Promise.allSettled([
+        const [appRes, docRes, payRes] = await Promise.allSettled([
           appointmentApi.getByPatient(user.id),
           doctorApi.getAll(),
           paymentApi.getByPatient(user.id),
-          notificationApi.getByUser(user.id),
         ]);
 
         const appData = appRes.status === 'fulfilled' ? appRes.value.data?.data || [] : [];
         const docData = docRes.status === 'fulfilled' ? docRes.value.data?.data || [] : [];
         const payData = payRes.status === 'fulfilled' ? payRes.value.data?.data || [] : [];
-        const notifData = notifRes.status === 'fulfilled' ? notifRes.value.data?.data || [] : [];
 
         setAppointments(appData);
         setDoctors(docData);
         setPayments(payData);
-        setNotifications(notifData);
 
-        const upcomingCount = appData.filter((a) => a.status === 'PENDING' || a.status === 'CONFIRMED').length;
+        const upcomingCount = appData.filter(
+          (a) => a.status === 'PENDING' || a.status === 'CONFIRMED'
+        ).length;
         const completedCount = appData.filter((a) => a.status === 'COMPLETED').length;
         const totalSpent = payData
           .filter((p) => p.status === 'PAID')
@@ -83,156 +88,217 @@ export default function PatientDashboard() {
     }
   };
 
-  if (loading) return <Loader text="Loading your dashboard..." />;
+  if (loading) return <Loader text="Loading your health portal..." />;
 
   const upcomingAppointment = appointments.find(
     (a) => a.status === 'PENDING' || a.status === 'CONFIRMED'
   );
 
   return (
-    <div className="space-y-6">
-      {/* Welcome Banner */}
-      <div className="relative overflow-hidden rounded-3xl gradient-hero text-white p-6 sm:p-8 shadow-xl">
-        <div className="relative z-10 max-w-2xl">
-          <span className="inline-block px-3 py-1 bg-white/10 backdrop-blur rounded-full text-xs font-semibold text-primary-300 mb-3">
-            Patient Portal
-          </span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            Welcome back, {user?.firstName || 'Patient'}!
-          </h1>
-          <p className="mt-2 text-sm sm:text-base text-navy-200 leading-relaxed">
-            Find top medical specialists, book channeling appointments, and manage your healthcare schedule in one place.
-          </p>
-          <div className="mt-5 flex flex-wrap gap-3">
+    <div className="space-y-8 animate-fade-in">
+      {/* ── Welcome Hero ── */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0e7490] via-[#0891b2] to-[#06b6d4] p-6 sm:p-8 text-white shadow-lg">
+        {/* decorative circles */}
+        <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-white/5 pointer-events-none" />
+        <div className="absolute -bottom-14 -left-6 w-40 h-40 rounded-full bg-white/5 pointer-events-none" />
+
+        <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-white/15 text-white/90 px-3 py-1 rounded-full border border-white/20">
+              <Stethoscope className="w-3.5 h-3.5" /> Patient Portal
+            </span>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+              {getGreeting()}, {user?.firstName || 'there'}!
+            </h1>
+            <p className="text-sm text-white/80 max-w-md">
+              Find doctors, manage appointments, and keep track of your healthcare visits.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0">
             <Link to="/patient/doctors">
-              <Button variant="accent" size="sm" className="gap-2">
-                <Search className="w-4 h-4" /> Find Doctors
-              </Button>
+              <button
+                id="btn-find-doctor"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 border border-white/25 text-white text-sm font-semibold transition-all cursor-pointer"
+              >
+                <Search className="w-4 h-4" /> Find a Doctor
+              </button>
             </Link>
             <Link to="/patient/book">
-              <Button variant="primary" size="sm" className="gap-2">
-                <Calendar className="w-4 h-4" /> Book Appointment
-              </Button>
+              <button
+                id="btn-book-appointment"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-primary-700 hover:bg-white/90 text-sm font-semibold transition-all shadow cursor-pointer"
+              >
+                <Plus className="w-4 h-4" /> Book Appointment
+              </button>
             </Link>
           </div>
         </div>
       </div>
 
-      {/* Quick Stats */}
+      {/* ── Quick Statistics ── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="bg-white border border-navy-100 p-5 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-primary-50 text-primary-600 flex items-center justify-center">
-            <Calendar className="w-6 h-6" />
-          </div>
-          <div>
-            <span className="text-xs font-bold text-navy-400 uppercase tracking-wider">Upcoming Visits</span>
-            <h3 className="text-2xl font-extrabold text-navy-900">{stats.upcoming}</h3>
-          </div>
-        </Card>
-
-        <Card className="bg-white border border-navy-100 p-5 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-accent-50 text-accent-600 flex items-center justify-center">
-            <UserCheck className="w-6 h-6" />
-          </div>
-          <div>
-            <span className="text-xs font-bold text-navy-400 uppercase tracking-wider">Completed Visits</span>
-            <h3 className="text-2xl font-extrabold text-navy-900">{stats.completed}</h3>
-          </div>
-        </Card>
-
-        <Card className="bg-white border border-navy-100 p-5 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center">
-            <CreditCard className="w-6 h-6" />
-          </div>
-          <div>
-            <span className="text-xs font-bold text-navy-400 uppercase tracking-wider">Total Paid</span>
-            <h3 className="text-2xl font-extrabold text-navy-900">${stats.spent.toFixed(2)}</h3>
-          </div>
-        </Card>
+        <StatCard
+          icon={Calendar}
+          label="Upcoming Visits"
+          value={stats.upcoming}
+          description="Scheduled consultations"
+          iconClassName="bg-primary-50 text-primary-600"
+        />
+        <StatCard
+          icon={UserCheck}
+          label="Completed Visits"
+          value={stats.completed}
+          description="Past consultations"
+          iconClassName="bg-accent-50 text-accent-600"
+        />
+        <StatCard
+          icon={CreditCard}
+          label="Total Paid"
+          value={`$${stats.spent.toFixed(2)}`}
+          description="Channeling fees settled"
+          iconClassName="bg-purple-50 text-purple-600"
+        />
       </div>
 
-      {/* Upcoming Appointment Alert */}
-      {upcomingAppointment && (
-        <Card className="bg-gradient-to-r from-primary-50 to-cyan-50 border border-primary-100 p-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-primary-600 text-white flex items-center justify-center shrink-0">
-                <Clock className="w-6 h-6" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-primary-700 uppercase tracking-wider">Next Appointment</span>
-                  <Badge status={upcomingAppointment.status} />
+      {/* ── Upcoming Appointment Spotlight ── */}
+      <div className="space-y-3">
+        <h2 className="text-base font-bold text-navy-900">Upcoming Appointment</h2>
+        {upcomingAppointment ? (
+          <div className="bg-white border border-primary-200/70 rounded-2xl p-5 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-primary-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <Clock className="w-5 h-5" />
                 </div>
-                <h4 className="font-extrabold text-navy-900 text-base mt-0.5">
-                  Appt #{upcomingAppointment.appointmentNumber || upcomingAppointment.id?.slice(0, 8)}
-                </h4>
-                <p className="text-xs text-navy-600 mt-1">
-                  Date: <span className="font-bold text-navy-800">{upcomingAppointment.appointmentDate}</span> at{' '}
-                  <span className="font-bold text-navy-800">{upcomingAppointment.startTime?.slice(0, 5)}</span>
-                </p>
+                <div className="space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-bold text-primary-700 uppercase tracking-wider">
+                      Next Consultation
+                    </span>
+                    <StatusBadge status={upcomingAppointment.status} />
+                  </div>
+                  <h3 className="font-bold text-navy-900 text-base">
+                    Appointment #{upcomingAppointment.appointmentNumber || upcomingAppointment.id?.slice(0, 8)}
+                  </h3>
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-navy-500 mt-1">
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5 text-primary-500" />
+                      <span className="font-semibold text-navy-800">{upcomingAppointment.appointmentDate}</span>
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5 text-primary-500" />
+                      <span className="font-semibold text-navy-800">{upcomingAppointment.startTime?.slice(0, 5)}</span>
+                    </span>
+                    {upcomingAppointment.hospitalId && (
+                      <span className="flex items-center gap-1">
+                        <Building2 className="w-3.5 h-3.5 text-navy-400" />
+                        <span>Hospital</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
+
+              <Link
+                to={`/patient/appointments/${upcomingAppointment.id}`}
+                id="btn-view-upcoming-details"
+                className="shrink-0"
+              >
+                <button className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold transition-all cursor-pointer whitespace-nowrap">
+                  View Details <ChevronRight className="w-4 h-4" />
+                </button>
+              </Link>
             </div>
-            <Link to={`/patient/appointments/${upcomingAppointment.id}`}>
-              <Button variant="primary" size="sm" className="gap-1.5 whitespace-nowrap">
-                View Details <ChevronRight className="w-4 h-4" />
-              </Button>
+          </div>
+        ) : (
+          <div className="bg-white border border-navy-100 rounded-2xl p-8 text-center space-y-3 shadow-xs">
+            <div className="w-12 h-12 rounded-xl bg-navy-50 text-navy-400 flex items-center justify-center mx-auto">
+              <Calendar className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="font-semibold text-navy-700 text-sm">No upcoming appointments</p>
+              <p className="text-xs text-navy-400 mt-0.5">Book a consultation with a doctor to get started.</p>
+            </div>
+            <Link to="/patient/doctors">
+              <button
+                id="btn-empty-find-doctor"
+                className="mt-1 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold transition-all cursor-pointer"
+              >
+                <Search className="w-4 h-4" /> Find a Doctor
+              </button>
             </Link>
           </div>
-        </Card>
-      )}
+        )}
+      </div>
 
-      {/* Available Doctors Section */}
+      {/* ── Featured Specialists ── */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-bold text-navy-900">Featured Specialists</h2>
-            <p className="text-xs text-navy-400">Top medical practitioners available for booking</p>
+            <h2 className="text-base font-bold text-navy-900">Featured Specialists</h2>
+            <p className="text-xs text-navy-400 mt-0.5">Top medical practitioners available for booking</p>
           </div>
-          <Link to="/patient/doctors" className="text-xs font-bold text-primary-600 hover:underline flex items-center gap-1">
+          <Link
+            to="/patient/doctors"
+            className="text-xs font-semibold text-primary-600 hover:text-primary-700 flex items-center gap-1 transition-colors"
+          >
             View all <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {doctors.slice(0, 3).map((doctor) => (
-            <DoctorCard key={doctor.id} doctor={doctor} />
-          ))}
-          {doctors.length === 0 && (
-            <div className="col-span-full bg-white p-8 rounded-2xl border border-navy-100 text-center text-sm text-navy-400">
-              No doctors listed in the directory yet.
-            </div>
-          )}
-        </div>
+        {doctors.length === 0 ? (
+          <EmptyState
+            icon={Stethoscope}
+            title="No doctors available yet"
+            description="Doctors will appear here when they are added to the directory."
+            actionLabel="Browse Directory"
+            onAction={() => (window.location.href = '/patient/doctors')}
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {doctors.slice(0, 3).map((doctor) => (
+              <DoctorCard key={doctor.id} doctor={doctor} />
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Recent Appointments */}
+      {/* ── Recent Appointments ── */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-bold text-navy-900">Recent Appointments</h2>
-            <p className="text-xs text-navy-400">Your recent channeling history and bookings</p>
+            <h2 className="text-base font-bold text-navy-900">Recent Appointments</h2>
+            <p className="text-xs text-navy-400 mt-0.5">Your latest channeling history</p>
           </div>
-          <Link to="/patient/appointments" className="text-xs font-bold text-primary-600 hover:underline flex items-center gap-1">
-            All appointments <ArrowRight className="w-3.5 h-3.5" />
+          <Link
+            to="/patient/appointments"
+            className="text-xs font-semibold text-primary-600 hover:text-primary-700 flex items-center gap-1 transition-colors"
+          >
+            View all <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {appointments.slice(0, 3).map((app) => (
-            <AppointmentCard
-              key={app.id}
-              appointment={app}
-              role="PATIENT"
-              onCancel={handleCancelAppointment}
-            />
-          ))}
-          {appointments.length === 0 && (
-            <div className="col-span-full bg-white p-8 rounded-2xl border border-navy-100 text-center text-sm text-navy-400">
-              You haven't booked any appointments yet. Click "Book Appointment" above to get started!
-            </div>
-          )}
-        </div>
+        {appointments.length === 0 ? (
+          <EmptyState
+            icon={Calendar}
+            title="No appointments scheduled yet"
+            description="Book your first appointment with a doctor to get started."
+            actionLabel="Book Appointment"
+            onAction={() => (window.location.href = '/patient/book')}
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {appointments.slice(0, 3).map((app) => (
+              <AppointmentCard
+                key={app.id}
+                appointment={app}
+                role="PATIENT"
+                onCancel={handleCancelAppointment}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

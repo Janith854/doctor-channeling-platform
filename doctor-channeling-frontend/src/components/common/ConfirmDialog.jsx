@@ -7,7 +7,7 @@ export default function ConfirmDialog({
   onClose,
   onConfirm,
   title = 'Confirm Action',
-  message = 'Are you sure you want to proceed?',
+  message = 'Are you sure you want to proceed with this action? This cannot be undone.',
   confirmText = 'Confirm',
   cancelText = 'Cancel',
   variant = 'danger',
@@ -15,17 +15,19 @@ export default function ConfirmDialog({
 }) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="sm">
-      <div className="text-center">
-        <div className="w-14 h-14 rounded-full bg-danger-50 flex items-center justify-center mx-auto mb-4">
-          <AlertTriangle className="w-7 h-7 text-danger-500" />
+      <div className="text-center py-2">
+        <div className="w-12 h-12 rounded-2xl bg-danger-50 text-danger-600 flex items-center justify-center mx-auto mb-3.5">
+          <AlertTriangle className="w-6 h-6" />
         </div>
-        <h3 className="text-lg font-semibold text-navy-900 mb-2">{title}</h3>
-        <p className="text-sm text-navy-500 mb-6">{message}</p>
+        <h3 className="text-base font-bold text-navy-900 mb-1.5">{title}</h3>
+        <p className="text-xs sm:text-sm text-navy-500 mb-6 leading-relaxed">
+          {message}
+        </p>
         <div className="flex gap-3 justify-center">
-          <Button variant="secondary" onClick={onClose} disabled={loading}>
+          <Button variant="secondary" size="md" onClick={onClose} disabled={loading}>
             {cancelText}
           </Button>
-          <Button variant={variant} onClick={onConfirm} loading={loading}>
+          <Button variant={variant} size="md" onClick={onConfirm} loading={loading}>
             {confirmText}
           </Button>
         </div>

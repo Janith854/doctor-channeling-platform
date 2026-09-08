@@ -21,21 +21,26 @@ import PatientAppointments from './pages/patient/PatientAppointments';
 import AppointmentDetails from './pages/patient/AppointmentDetails';
 import PatientPayments from './pages/patient/PatientPayments';
 import PatientNotifications from './pages/patient/PatientNotifications';
+import PatientProfile from './pages/patient/PatientProfile';
 
 // Doctor Pages
 import DoctorDashboard from './pages/doctor/DoctorDashboard';
 import ScheduleManagement from './pages/doctor/ScheduleManagement';
 import DoctorAppointments from './pages/doctor/DoctorAppointments';
+import DoctorPatients from './pages/doctor/DoctorPatients';
 import DoctorNotifications from './pages/doctor/DoctorNotifications';
+import DoctorSelfProfile from './pages/doctor/DoctorProfile';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
+import AdminPatients from './pages/admin/AdminPatients';
 import AdminDoctors from './pages/admin/AdminDoctors';
 import AdminHospitals from './pages/admin/AdminHospitals';
 import AdminSpecializations from './pages/admin/AdminSpecializations';
 import AdminAppointments from './pages/admin/AdminAppointments';
 import AdminPayments from './pages/admin/AdminPayments';
+import AdminReports from './pages/admin/AdminReports';
 
 export default function App() {
   return (
@@ -78,6 +83,7 @@ export default function App() {
             <Route path="appointments/:id" element={<AppointmentDetails />} />
             <Route path="payments" element={<PatientPayments />} />
             <Route path="notifications" element={<PatientNotifications />} />
+            <Route path="profile" element={<PatientProfile />} />
           </Route>
 
           {/* Doctor Routes */}
@@ -94,7 +100,9 @@ export default function App() {
             <Route index element={<DoctorDashboard />} />
             <Route path="schedule" element={<ScheduleManagement />} />
             <Route path="appointments" element={<DoctorAppointments />} />
+            <Route path="patients" element={<DoctorPatients />} />
             <Route path="notifications" element={<DoctorNotifications />} />
+            <Route path="profile" element={<DoctorSelfProfile />} />
           </Route>
 
           {/* Admin Routes */}
@@ -110,11 +118,15 @@ export default function App() {
           >
             <Route index element={<AdminDashboard />} />
             <Route path="users" element={<AdminUsers />} />
+            <Route path="patients" element={<AdminPatients />} />
             <Route path="doctors" element={<AdminDoctors />} />
             <Route path="hospitals" element={<AdminHospitals />} />
             <Route path="specializations" element={<AdminSpecializations />} />
             <Route path="appointments" element={<AdminAppointments />} />
             <Route path="payments" element={<AdminPayments />} />
+            <Route path="reports" element={<AdminReports />} />
+            <Route path="notifications" element={<PatientNotifications />} />
+            <Route path="settings" element={<AdminSpecializations />} />
           </Route>
 
           {/* Catch-all */}

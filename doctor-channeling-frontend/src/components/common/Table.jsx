@@ -1,52 +1,78 @@
 import { clsx } from 'clsx';
+import EmptyState from './EmptyState';
+import { Database } from 'lucide-react';
 
-export default function Table({ columns, data, onRowClick, emptyMessage = 'No data found' }) {
+export default function Table({
+  columns,
+  data,
+  onRowClick,
+  emptyTitle = 'No records found',
+  emptyMessage = 'No data available to display in this table.',
+  emptyActionLabel,
+  onEmptyAction,
+  className = '',
+}) {
   if (!data || data.length === 0) {
     return (
-      <div className="text-center py-12 text-navy-400">
-        <p>{emptyMessage}</p>
-      </div>
+      <EmptyState
+        icon={Database}
+        title={emptyTitle}
+        description={emptyMessage}
+        actionLabel={emptyActionLabel}
+        onAction={onEmptyAction}
+        className="my-4"
+      />
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-navy-200 bg-white">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-navy-100 bg-navy-50/50">
-            {columns.map((col) => (
-              <th
-                key={col.key}
-                className={clsx(
-                  'px-4 py-3 text-left font-semibold text-navy-600 whitespace-nowrap',
-                  col.className
-                )}
-              >
-                {col.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((row, idx) => (
-            <tr
-              key={row.id || idx}
-              onClick={() => onRowClick?.(row)}
-              className={clsx(
-                'border-b border-navy-50 transition-colors',
-                'hover:bg-primary-50/30',
-                onRowClick && 'cursor-pointer'
-              )}
-            >
+    <div
+      className={clsx(
+        'overflow-hidden rounded-2xl border border-navy-100 bg-white shadow-xs',
+        className
+      )}
+    >
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="border-b border-navy-100 bg-navy-50/70 text-navy-600">
               {columns.map((col) => (
-                <td key={col.key} className={clsx('px-4 py-3 text-navy-700', col.className)}>
-                  {col.render ? col.render(row) : row[col.key]}
-                </td>
+                <th
+                  key={col.key}
+                  className={clsx(
+                    'px-4 py-3 text-xs font-semibold uppercase tracking-wider whitespace-nowrap',
+                    col.className
+                  )}
+                >
+                  {col.label}
+                </th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y divide-navy-50">
+            {data.map((row, idx) => (
+              <tr
+                key={row.id || idx}
+                onClick={() => onRowClick?.(row)}
+                className={clsx(
+                  'transition-colors duration-150',
+                  'hover:bg-primary-50/20',
+                  onRowClick && 'cursor-pointer'
+                )}
+              >
+                {columns.map((col) => (
+                  <td
+                    key={col.key}
+                    className={clsx('px-4 py-3.5 text-navy-700 text-xs sm:text-sm', col.className)}
+                  >
+                    {col.render ? col.render(row) : row[col.key]}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

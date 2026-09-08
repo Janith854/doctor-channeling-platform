@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { hospitalApi } from '../../api/directoryApi';
 import Table from '../../components/common/Table';
 import Button from '../../components/common/Button';
+import PageHeader from '../../components/common/PageHeader';
 import Loader from '../../components/common/Loader';
 import Modal from '../../components/common/Modal';
 import Input from '../../components/common/Input';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
-import { Building2, Plus, Edit2, Trash2, MapPin, Phone, Mail } from 'lucide-react';
+import { Building2, Plus, Edit2, Trash2, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function AdminHospitals() {
@@ -68,10 +69,10 @@ export default function AdminHospitals() {
       setSaving(true);
       if (editHospital) {
         await hospitalApi.update(editHospital.id, formData);
-        toast.success('Hospital updated');
+        toast.success('Hospital updated successfully');
       } else {
         await hospitalApi.create(formData);
-        toast.success('Hospital registered');
+        toast.success('Hospital registered successfully');
       }
       setIsModalOpen(false);
       fetchHospitals();
@@ -102,8 +103,8 @@ export default function AdminHospitals() {
       key: 'name',
       label: 'Hospital Name',
       render: (row) => (
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-accent-50 text-accent-600 flex items-center justify-center shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-accent-50 text-accent-700 border border-accent-100 flex items-center justify-center shrink-0">
             <Building2 className="w-4 h-4" />
           </div>
           <span className="font-bold text-navy-900">{row.name}</span>
@@ -112,16 +113,17 @@ export default function AdminHospitals() {
     },
     {
       key: 'location',
-      label: 'Location',
+      label: 'Location & Region',
       render: (row) => (
-        <span className="text-xs text-navy-600 flex items-center gap-1">
-          <MapPin className="w-3.5 h-3.5 text-primary-500" /> {row.city || 'Colombo'}, {row.district || ''}
+        <span className="text-xs text-navy-600 flex items-center gap-1.5">
+          <MapPin className="w-3.5 h-3.5 text-primary-600 shrink-0" />{' '}
+          {row.city || 'Colombo'}{row.district ? `, ${row.district}` : ''}
         </span>
       ),
     },
     {
       key: 'phone',
-      label: 'Phone',
+      label: 'Contact Phone',
       render: (row) => <span className="text-xs text-navy-500">{row.phone || 'N/A'}</span>,
     },
     {
@@ -129,16 +131,18 @@ export default function AdminHospitals() {
       label: 'Actions',
       className: 'text-right',
       render: (row) => (
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center justify-end gap-1.5">
           <button
             onClick={() => handleOpenEdit(row)}
-            className="p-1.5 text-navy-500 hover:text-primary-600 hover:bg-navy-100 rounded-lg cursor-pointer transition-colors"
+            className="p-1.5 text-navy-500 hover:text-primary-600 hover:bg-navy-50 rounded-lg cursor-pointer transition-colors"
+            aria-label="Edit hospital"
           >
             <Edit2 className="w-4 h-4" />
           </button>
           <button
             onClick={() => setDeleteId(row.id)}
             className="p-1.5 text-navy-500 hover:text-danger-600 hover:bg-danger-50 rounded-lg cursor-pointer transition-colors"
+            aria-label="Delete hospital"
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -149,22 +153,32 @@ export default function AdminHospitals() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold text-navy-900">Hospital Management</h1>
-          <p className="text-sm text-navy-500 mt-1">Manage partnering hospitals, medical centers, and clinic locations</p>
-        </div>
-        <Button variant="primary" size="sm" onClick={handleOpenCreate} className="gap-2">
-          <Plus className="w-4 h-4" /> Add Hospital
-        </Button>
-      </div>
+      <PageHeader
+        title="Hospital Directory Management"
+        subtitle="Manage partnering hospitals, medical centers, and clinical facilities"
+        actions={
+          <Button variant="primary" size="md" onClick={handleOpenCreate} className="gap-2">
+            <Plus className="w-4 h-4" /> Add Hospital
+          </Button>
+        }
+      />
 
-      {loading ? <Loader text="Loading registered hospitals..." /> : <Table columns={columns} data={hospitals} />}
+      {loading ? (
+        <Loader text="Loading registered hospitals..." />
+      ) : (
+        <Table
+          columns={columns}
+          data={hospitals}
+          emptyTitle="No hospitals registered"
+          emptyMessage="Add the first medical center or hospital branch to the directory."
+        />
+      )}
 
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={editHospital ? 'Edit Hospital Details' : 'Register New Hospital'}
+        subtitle="Specify medical center location and contact credentials"
       >
         <form onSubmit={handleSave} className="space-y-4">
           <Input
@@ -213,9 +227,13 @@ export default function AdminHospitals() {
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-3">
-            <Button variant="secondary" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-            <Button variant="primary" type="submit" loading={saving}>Save Hospital</Button>
+          <div className="flex justify-end gap-2.5 pt-3">
+            <Button variant="secondary" size="md" onClick={() => setIsModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" size="md" type="submit" loading={saving}>
+              Save Hospital
+            </Button>
           </div>
         </form>
       </Modal>
@@ -226,7 +244,7 @@ export default function AdminHospitals() {
         onConfirm={handleDelete}
         loading={saving}
         title="Delete Hospital"
-        message="Are you sure you want to remove this hospital?"
+        message="Are you sure you want to remove this hospital from the directory?"
       />
     </div>
   );

@@ -5,7 +5,7 @@ export default function Card({
   className = '',
   glass = false,
   hover = false,
-  padding = 'p-6',
+  padding = 'p-5 sm:p-6',
   onClick,
   ...props
 }) {
@@ -13,11 +13,11 @@ export default function Card({
     <div
       onClick={onClick}
       className={clsx(
-        'rounded-2xl transition-all duration-300',
+        'rounded-2xl transition-all duration-200',
         glass
           ? 'glass'
-          : 'bg-white border border-navy-100 shadow-sm',
-        hover && 'hover:shadow-lg hover:-translate-y-0.5 cursor-pointer',
+          : 'bg-white border border-navy-100 shadow-xs',
+        hover && 'hover:shadow-md hover:border-navy-200 hover:-translate-y-0.5 cursor-pointer',
         padding,
         className
       )}

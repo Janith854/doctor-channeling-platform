@@ -2,18 +2,26 @@ import { clsx } from 'clsx';
 import { Loader2 } from 'lucide-react';
 
 const variants = {
-  primary: 'bg-primary-600 hover:bg-primary-700 text-white shadow-lg shadow-primary-600/20',
-  secondary: 'bg-navy-100 hover:bg-navy-200 text-navy-700 border border-navy-200',
-  danger: 'bg-danger-500 hover:bg-danger-600 text-white shadow-lg shadow-danger-500/20',
-  accent: 'bg-accent-500 hover:bg-accent-600 text-white shadow-lg shadow-accent-500/20',
-  ghost: 'bg-transparent hover:bg-navy-100 text-navy-600',
-  outline: 'bg-transparent border-2 border-primary-500 text-primary-600 hover:bg-primary-50',
+  primary:
+    'bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white shadow-xs focus-visible:ring-primary-500/40',
+  secondary:
+    'bg-white hover:bg-navy-50 active:bg-navy-100 text-navy-700 border border-navy-200 hover:border-navy-300 shadow-xs focus-visible:ring-navy-300/40',
+  danger:
+    'bg-danger-600 hover:bg-danger-700 active:bg-danger-800 text-white shadow-xs focus-visible:ring-danger-500/40',
+  success:
+    'bg-accent-600 hover:bg-accent-700 active:bg-accent-800 text-white shadow-xs focus-visible:ring-accent-500/40',
+  accent:
+    'bg-accent-600 hover:bg-accent-700 active:bg-accent-800 text-white shadow-xs focus-visible:ring-accent-500/40',
+  ghost:
+    'bg-transparent hover:bg-navy-100/70 text-navy-600 hover:text-navy-900 focus-visible:ring-navy-300/40',
+  outline:
+    'bg-transparent border border-primary-600 text-primary-600 hover:bg-primary-50 focus-visible:ring-primary-500/40',
 };
 
 const sizes = {
-  sm: 'px-3 py-1.5 text-sm',
-  md: 'px-5 py-2.5 text-sm',
-  lg: 'px-6 py-3 text-base',
+  sm: 'h-8 px-3 text-xs gap-1.5',
+  md: 'h-10 px-4 text-sm gap-2',
+  lg: 'h-11 px-5 text-sm gap-2.5 font-semibold',
 };
 
 export default function Button({
@@ -32,17 +40,17 @@ export default function Button({
       type={type}
       disabled={disabled || loading}
       className={clsx(
-        'inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-all duration-200 focus-ring cursor-pointer',
-        'disabled:opacity-50 disabled:cursor-not-allowed',
-        'active:scale-[0.98]',
-        variants[variant],
-        sizes[size],
+        'inline-flex items-center justify-center rounded-xl font-medium transition-all duration-150',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1',
+        'disabled:opacity-50 disabled:pointer-events-none cursor-pointer select-none',
+        variants[variant] || variants.primary,
+        sizes[size] || sizes.md,
         fullWidth && 'w-full',
         className
       )}
       {...props}
     >
-      {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+      {loading && <Loader2 className="w-4 h-4 animate-spin shrink-0" />}
       {children}
     </button>
   );
