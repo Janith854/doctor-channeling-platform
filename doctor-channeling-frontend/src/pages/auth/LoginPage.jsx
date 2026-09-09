@@ -43,14 +43,20 @@ export default function LoginPage() {
       navigate(destination, { replace: true });
     } catch (err) {
       console.error('Login error details:', err);
-      const realMessage =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        (typeof err.response?.data === 'string' && err.response.data.trim()) ||
-        (err.code === 'ERR_NETWORK'
-          ? 'Cannot connect to Identity Service. Please check if the service is running.'
-          : err.message) ||
-        'Invalid email or password. Please try again.';
+      let realMessage = 'Invalid email or password. Please try again.';
+      if (err.response?.status === 502 || err.response?.status === 503) {
+        realMessage = 'Identity service is temporarily unavailable (502 Bad Gateway). Please try again shortly.';
+      } else if (err.response?.data?.message) {
+        realMessage = err.response.data.message;
+      } else if (err.response?.data?.error) {
+        realMessage = err.response.data.error;
+      } else if (typeof err.response?.data === 'string' && !err.response.data.includes('<html')) {
+        realMessage = err.response.data.trim();
+      } else if (err.code === 'ERR_NETWORK') {
+        realMessage = 'Cannot connect to Identity Service. Please check if the service is running.';
+      } else if (err.message && !err.message.includes('<html')) {
+        realMessage = err.message;
+      }
       setServerError(realMessage);
     } finally {
       setLoading(false);
