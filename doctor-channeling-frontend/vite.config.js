@@ -66,15 +66,15 @@ export default defineConfig({
         secure: false,
       },
 
-      // Notification Service (8085)
-      '/api/v1/notifications': {
+      // Payment Service (8085)
+      '/api/v1/payments': {
         target: 'http://localhost:8085',
         changeOrigin: true,
         secure: false,
       },
 
-      // Payment Service (8086)
-      '/api/v1/payments': {
+      // Notification Service (8086)
+      '/api/v1/notifications': {
         target: 'http://localhost:8086',
         changeOrigin: true,
         secure: false,
